@@ -1,6 +1,10 @@
 from pyquil import Program, get_qc
 from pyquil.gates import *
 from pyquil.quilbase import DefPermutationGate
+from pyquil.quil import DefGate
+from pyquil.api import local_forest_runtime
+from math import floor, pi, sqrt
+import numpy as np
 
 #This function populates a list with all the combinations of bit strings of length n
 def get_bitstring_permutations(index, lst, n, args):
@@ -24,24 +28,24 @@ This function returns an oracle gate representing the function f
     The permutation gate is returned.
 """
 def generate_uf(f,n,name):
-#generate list of all bitstrings of size n
-bitstrings = list()
-get_bitstring_permutations(0, bitstrings, n+1, [0]*(n+1))
-#initialize mapping and permutation list
-perm_dict = dict()
-perm_list = list()
-#populate mapping
-for permutation, bitstring in enumerate(bitstrings):
-    perm_dict["".join(str(bit) for bit in bitstring)] = permutation
-#Send each |xy> to |x, f(x) + y>
-for bitstring in bitstrings:
-    params = bitstring[:n]
-    params.append((f(params) + bitstring[-1])%2)
-    perm_list.append(perm_dict["".join(str(bit) for bit in params)])
+    #generate list of all bitstrings of size n
+    bitstrings = list()
+    get_bitstring_permutations(0, bitstrings, n+1, [0]*(n+1))
+    #initialize mapping and permutation list
+    perm_dict = dict()
+    perm_list = list()
+    #populate mapping
+    for permutation, bitstring in enumerate(bitstrings):
+        perm_dict["".join(str(bit) for bit in bitstring)] = permutation
+    #Send each |xy> to |x, f(x) + y>
+    for bitstring in bitstrings:
+        params = bitstring[:n]
+        params.append((f(params) + bitstring[-1])%2)
+        perm_list.append(perm_dict["".join(str(bit) for bit in params)])
 
-#Create and return permutation gate
-return DefPermutationGate(name, perm_list)
-
+    #Create and return permutation gate
+    return DefPermutationGate(name, perm_list)
+    
 """
 Apply Hadamards to all specified qubits (if apply_to_list[index] == 1)
 Designed for a large amount of Hadamards being applied at once
@@ -64,3 +68,34 @@ def initialize(states):
             program += X(index)
         program += H(index)
     return program
+    
+    
+    
+def deutsch_josza_algorithm(f,n):
+    initialize_list = [0]*n
+    initialize_list.append(1)
+    qubits = list(range(len(initialize_list)))
+    program = initialize(initialize_list)
+    uf_gate = generate_uf(f,n,"Uf")
+    Uf = uf_gate.get_constructor()
+    program += uf_gate
+    program += Uf(*qubits)
+    apply_to_list = [1]*n
+    apply_to_list.append(0)
+    program = apply_H(program, apply_to_list)
+    print(program)
+    with local_forest_runtime():
+        qvm = get_qc('9q-square-qvm')
+        #1 trial because DJ is deterministic
+        results = qvm.run_and_measure(program, trials=1)
+        ones = 0
+        for i in range(n):
+            if(results[i] != 0):
+                return 0
+        return 1
+def f(args):
+    return 1
+    #return (args[0] + args[1])%2
+
+print(deutsch_josza_algorithm(f, 2))
+    

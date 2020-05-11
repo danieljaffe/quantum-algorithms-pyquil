@@ -76,7 +76,6 @@ def grovers_algorithm(f, n):
     Zf = zf_gate.get_constructor()
     iteration_count = floor(pi/4 * sqrt(n))
     h_qubits = [1]*n
-    print(iteration_count)
     for i in range(iteration_count):
         #Apply Zf
         program += zf_gate
@@ -89,7 +88,7 @@ def grovers_algorithm(f, n):
         #Apply H to all qubits
         apply_H(program, h_qubits)
     #Measure
-    print(program)
+    #print(program)
     with local_forest_runtime():
        qvm = get_qc('9q-square-qvm')
        results = qvm.run_and_measure(program, trials=10)
@@ -105,6 +104,9 @@ def grovers_algorithm(f, n):
         
     
 def f(list):
+    for l in list:
+        if l == 1:
+            return 0
     return 0
 
 print(grovers_algorithm(f, 5))
