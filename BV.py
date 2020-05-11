@@ -71,8 +71,9 @@ def initialize(states):
     
     
     
-def deutsch_josza_algorithm(f,n):
+def bernstein_vazirani_algorithm(f,n):
     initialize_list = [0]*n
+    b = f(initialize_list)
     initialize_list.append(1)
     qubits = list(range(len(initialize_list)))
     program = initialize(initialize_list)
@@ -89,15 +90,18 @@ def deutsch_josza_algorithm(f,n):
         #1 trial because DJ is deterministic
         results = qvm.run_and_measure(program, trials=1)
         ones = 0
+       # print(results)
+        a = []
         for i in range(n):
-            if(results[i] != 0):
-                return 0
-        return 1
+            a.append(results[i][0])
+        return a,b
     #in case of failure
-    return 0
-def f(args):
-    return 1
+    return b, None
     #return (args[0] + args[1])%2
-
-print(deutsch_josza_algorithm(f, 2))
     
+def f(args):
+    return args[1]
+
+a,b = bernstein_vazirani_algorithm(f, 2)
+print(a, b)
+
