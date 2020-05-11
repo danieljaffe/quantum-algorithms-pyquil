@@ -10,11 +10,11 @@ def get_bitstring_permutations(index, lst, n, args):
     else:
         #handle the case where the preceding bit is 0
         args[index] = 0
-        get_bitstring_combinations(index + 1, lst, n, args)
+        get_bitstring_permutations(index + 1, lst, n, args)
         
         #handle the case where the preceding bit is 1
         args[index] = 1
-        get_bitstring_combinations(index + 1, lst, n, args)
+        get_bitstring_permutations(index + 1, lst, n, args)
 
 """
 Parameters: f is an anoynmous function and n is the number of bits in input: f:{0,1}^n -> {0,1}
