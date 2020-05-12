@@ -84,7 +84,7 @@ def get_Zf(f, n):
     return DefGate("Zf", gate)
     
 """
-This function is intended to determine if there exists an x in {0,1}^n s.t. f(x) = 1. The algorithm first constructs Zf, -Z0 gates, initializes with Hanamard matrices, and applies G = -H^n o Z0 o H^n o Zf. This algorithm is not deterministic, so G is applied multiple times. More specifically, G is run (pi / 4 * sqrt(n)) times. Furthermore, there are 10 trials to minimilize the chance of a false negative.
+This function is intended to determine if there exists an x in {0,1}^n s.t. f(x) = 1 for a given function f s.t. f:{0,1}^n -> {0,1}. The algorithm first constructs Zf, -Z0 gates, initializes with Hanamard matrices, and applies G = -H^n o Z0 o H^n o Zf. This algorithm is not deterministic, so G is applied multiple times. More specifically, G is run (pi / 4 * sqrt(n)) times. Furthermore, there are 10 trials to minimilize the chance of a false negative.
 This function has an anonymous function and integer n as parameters.
 This function runs the algorithm as described for each 10 trials, and then checks if for any of the outputted states x, if f(x) = 1. If this is true, then 1 is returned, otherwise 0 is returned. The function returns 0 if there is an issue with the simulator.
 This function uses 9q-squared-qvm, so it assumes that n <= 9

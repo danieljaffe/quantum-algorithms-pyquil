@@ -70,30 +70,41 @@ def initialize(states):
     return program
     
     
-    
-def deutsch_josza_algorithm(f,n):
+"""
+    This function is intended to determine if f is constant or balanced for a given function f s.t. f:{0,1}^n -> {0,1}. The algorithm initializes the qubits with H for the first n qubits and X and H for the last qubit. The algorithm then constructs a Uf oracle gate based on the function input f. It then applies Uf to all the qubits and applies H to the first n qubits. Finally, the simulator is run on the circuit and measures the results. If upon measurement, the first n qubits are all 0, 1 is returned and the function is constant, otherwise 0 is returned and the function is balanced.
+    This function has an anonymous function and integer n as parameters.
+    This function uses 9q-squared-qvm, so it assumes that n <= 9
+"""
+def deutsch_jozsa_algorithm(f,n):
+    #apply H to first n qubits and X H to the last qubit
     initialize_list = [0]*n
     initialize_list.append(1)
     qubits = list(range(len(initialize_list)))
     program = initialize(initialize_list)
+    #Generate Uf oracle from f (anonymous function)
     uf_gate = generate_uf(f,n,"Uf")
     Uf = uf_gate.get_constructor()
+    #Add Uf to circuit
     program += uf_gate
     program += Uf(*qubits)
+    #Apply Hadamards to first n qubits
     apply_to_list = [1]*n
     apply_to_list.append(0)
     program = apply_H(program, apply_to_list)
-    print(program)
+    #print(program)
+    #Run simulator
     with local_forest_runtime():
+        #Assume n <= 9
         qvm = get_qc('9q-square-qvm')
         #1 trial because DJ is deterministic
         results = qvm.run_and_measure(program, trials=1)
         ones = 0
+        #check if first n qubits are all 0
         for i in range(n):
             if(results[i] != 0):
                 return 0
         return 1
-    #in case of failure
+    #in case of failure, return 0
     return 0
 def f(args):
     return 1
