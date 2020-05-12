@@ -76,7 +76,7 @@ def initialize(states):
     This function uses 9q-squared-qvm, so it assumes that n <= 9
 """
 def deutsch_jozsa_algorithm(f,n):
-    #apply H to first n qubits and X H to the last qubit
+    #apply H to first n qubits and X H to the last qubit (ancilla qubit)
     initialize_list = [0]*n
     initialize_list.append(1)
     qubits = list(range(len(initialize_list)))
@@ -98,7 +98,6 @@ def deutsch_jozsa_algorithm(f,n):
         qvm = get_qc('9q-square-qvm')
         #1 trial because DJ is deterministic
         results = qvm.run_and_measure(program, trials=1)
-        ones = 0
         #check if first n qubits are all 0
         for i in range(n):
             if(results[i] != 0):

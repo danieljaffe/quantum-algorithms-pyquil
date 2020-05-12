@@ -71,37 +71,42 @@ def initialize(states):
     
     
     
+"""
+    This function is intended to determine to find a,b s.t. f(x) = a*x + b where a*x is bitwise inner product and + is addition modulo 2, for a given function f s.t. f:{0,1}^n -> {0,1}. It is assumed that f can be represented as f(x) = a*x + b.
+    The algorithm first calculates b by solving for f(0^n). It then initializes the qubits with H for the first n qubits and X and H for the last qubit. The algorithm then constructs a Uf oracle gate based on the function input f. It then applies Uf to all the qubits and applies H to the first n qubits. Finally, the simulator is run on the circuit and measures the results. The function then returns the first n measured qubits.
+       This function has an anonymous function and integer n as parameters.
+       This function uses 9q-squared-qvm, so it assumes that n <= 9
+"""
 def bernstein_vazirani_algorithm(f,n):
     initialize_list = [0]*n
+    #calculate b by f(0^n) = b
     b = f(initialize_list)
+    #Initialize circuit by applying H to first n qubits and X H to last qubit (ancilla qubit)
     initialize_list.append(1)
     qubits = list(range(len(initialize_list)))
     program = initialize(initialize_list)
+    #Generate a Uf oracle gate based on given function f
     uf_gate = generate_uf(f,n,"Uf")
     Uf = uf_gate.get_constructor()
+    #Add Uf to circuit
     program += uf_gate
     program += Uf(*qubits)
+    #Apply H to all qubits except for the last qubit
     apply_to_list = [1]*n
     apply_to_list.append(0)
     program = apply_H(program, apply_to_list)
-    print(program)
+    #print(program)
+    #run simulator and measure qubits
     with local_forest_runtime():
+        #Assume n <= 9
         qvm = get_qc('9q-square-qvm')
         #1 trial because DJ is deterministic
         results = qvm.run_and_measure(program, trials=1)
-        ones = 0
-       # print(results)
+        #retrive measurement of first n qubits
         a = []
         for i in range(n):
             a.append(results[i][0])
+        #return a,b
         return a,b
-    #in case of failure
+    #in case of failure, return b, None
     return b, None
-    #return (args[0] + args[1])%2
-    
-def f(args):
-    return args[1]
-
-a,b = bernstein_vazirani_algorithm(f, 2)
-print(a, b)
-
