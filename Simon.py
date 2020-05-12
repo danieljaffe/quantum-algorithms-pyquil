@@ -75,16 +75,6 @@ def initialize(states):
         program += H(index)
     return program
 
-
-def bitwise_xor(a,b):
-    if (len(a) != len(b)):
-        print("Length of A: #".format(len(a)))
-        print("Length of B: #".format(len(b)))
-    res = []
-    for i in range(len(a)-1):
-        res.append((a[i] + b[i])%2)
-    return np.array(res)
-
 def generate_uf_simons(f,n,name):
     #generate list of all bitstrings of size n
     bitstrings = list()
@@ -102,27 +92,28 @@ def generate_uf_simons(f,n,name):
         f_values = f(bitstring[:n])
         for i in range(n):
             params.append((params2[i]+f_values[i])%2)
-        # params.append(bitwise_xor(f(params),bitstring[n:(2*n)]))
         perm_list.append(perm_dict["".join(str(bit) for bit in params)])
 
     #Create and return permutation gate
     return DefPermutationGate(name, perm_list)
 
 def simons_solver(Y, n):
-    s_primes = []
-    bitstrings = list()
-    get_bitstring_permutations(0, bitstrings, n + 1, [0] * (n + 1))
+    bitstrings = []
+    get_bitstring_permutations(0, bitstrings, n, [0]*n)
     for s in bitstrings:
+        if s == [0]*n:
+            continue
         candidate = True
-        for y in np.arange(len(Y)):
+        for y in Y:
             value = 0
             for i in np.arange(n):
-                value = value + sp[i]*y[i]
+                value = value + s[i]*y[i]
             if(value%2 == 1):
                 candidate = False
         if (candidate):
-            s_primes.append(sp)
-    return s_primes
+            return s
+
+    return [0]*n
 
 def simons_algorithm(f, n):
     program = initialize([0]*n)
@@ -136,26 +127,22 @@ def simons_algorithm(f, n):
     apply_to_list = [1]*n
     np.append(apply_to_list, [0]*n)
     program = apply_H(program, apply_to_list)
-    print(program)
 
     with local_forest_runtime():
         qvm = get_qc('9q-square-qvm')
-        s_trials = np.array([])
+        s_trials = list()
         for i in range(20):
-            print(i)
             measurements = qvm.run_and_measure(program, trials=n-1)
             Y = np.zeros((n-1, n))
-            # print(measurements)
-            for index,j in enumerate(measurements):
-                # print(j)
-                Y[index] = j[:n]
+            for index in range(n):
+                for j in range(len(measurements[index])):
+                    Y[j][index] = measurements[index][j]
             s_primes = simons_solver(Y, n)
-            # print(s_primes)
-            np.append(s_trials, s_primes)
-        for trial in range(s_trials):
+            s_trials.append(s_primes)
+        for trial in s_trials:
             if (f([0]*n) == f(trial)):
                 return trial
-        return 0
+        return [0]*n
 
 def f(x):
     if x == [0,0,0]:
@@ -177,8 +164,21 @@ def f(x):
     else:
         return NULL
 
-s = simons_algorithm(f, 3)
-if(s == [1,1,0]):
-    print("Here is s:# It is correct".format(s))
-else:
-    print("Here is s:# It is incorrect".format(s))
+def f2(x):
+    if x == [0,0]:
+        return [0,1]
+    elif x == [0,1]:
+        return [1,1]
+    elif x == [1,0]:
+        return [0,1]
+    elif x == [1,1]:
+        return [1,1]
+
+def f3(x):
+    if x == [0]:
+        return [1]
+    elif x == [1]:
+        return [1]
+
+s = simons_algorithm(f2, 2)
+print(s)
